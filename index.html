@@ -1,0 +1,1209 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analisis Produk Fintech DANA — Kelompok B</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        dana: {
+                            50: '#e6f4fe',
+                            100: '#cce9fd',
+                            500: '#0086F9', // Electric Blue DANA signature
+                            600: '#006cdb',
+                            900: '#0b192c', // Deep Navy
+                            950: '#040d1a',
+                        },
+                        neon: {
+                            cyan: '#00f2fe',
+                            blue: '#4facfe',
+                            accent: '#38ef7d'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'float': 'float 6s ease-in-out infinite',
+                        'glow': 'glow 3s ease-in-out infinite alternate',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px) rotate(0deg)' },
+                            '50%': { transform: 'translateY(-15px) rotate(2deg)' },
+                        },
+                        glow: {
+                            '0%': { opacity: 0.4, transform: 'scale(1)' },
+                            '100%': { opacity: 0.8, transform: 'scale(1.05)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #040d1a;
+            color: #f1f5f9;
+            overflow-x: hidden;
+        }
+        .glass-panel {
+            background: rgba(11, 25, 44, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(0, 134, 249, 0.2);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+        .glass-card {
+            background: rgba(15, 32, 59, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .glass-card:hover {
+            border-color: rgba(0, 242, 254, 0.5);
+            box-shadow: 0 0 25px rgba(0, 134, 249, 0.25);
+            transform: translateY(-4px);
+        }
+        .text-glow {
+            text-shadow: 0 0 20px rgba(0, 134, 249, 0.6), 0 0 40px rgba(0, 242, 254, 0.3);
+        }
+        .btn-glow {
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        .btn-glow::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(60deg, transparent, rgba(255,255,255,0.2), transparent);
+            transform: rotate(45deg) translateX(-100%);
+            transition: transform 0.6s ease;
+        }
+        .btn-glow:hover::after {
+            transform: rotate(45deg) translateX(100%);
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #040d1a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #0b2545;
+            border-radius: 4px;
+            border: 1px solid rgba(0, 134, 249, 0.2);
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #0086F9;
+        }
+        .blurred-secret {
+            filter: blur(6px);
+            user-select: none;
+            transition: filter 0.4s ease;
+        }
+        .unlocked-secret {
+            filter: blur(0px);
+        }
+        /* Tech Spinner & Scanning Overlay */
+        .tech-loader-overlay {
+            background: rgba(4, 13, 26, 0.85);
+            backdrop-filter: blur(12px);
+            z-index: 100;
+        }
+        @keyframes scanline {
+            0% { transform: translateY(-100%); }
+            100% { transform: translateY(1000%); }
+        }
+        .scanline {
+            animation: scanline 2s linear infinite;
+        }
+    </style>
+</head>
+<body class="bg-dana-950 text-slate-100 min-h-screen flex flex-col justify-between selection:bg-dana-500 selection:text-white" x-data="danaApp()">
+
+    <!-- Cinematic 2-Second Tech Loading Overlay -->
+    <div x-show="isLoading" class="fixed inset-0 tech-loader-overlay flex flex-col items-center justify-center transition-opacity duration-300" x-cloak>
+        <div class="relative w-24 h-24 mb-6">
+            <div class="absolute inset-0 rounded-full border-4 border-dana-500/20 border-t-neon-cyan animate-spin"></div>
+            <div class="absolute inset-2 rounded-full border-4 border-blue-500/20 border-b-dana-500 animate-spin" style="animation-direction: reverse; animation-duration: 1.5s;"></div>
+            <div class="absolute inset-0 flex items-center justify-center font-black text-neon-cyan text-sm tracking-wider font-mono">DANA</div>
+        </div>
+        <div class="w-48 h-1 bg-slate-800 rounded-full overflow-hidden relative">
+            <div class="absolute inset-0 bg-gradient-to-r from-dana-500 to-neon-cyan animate-pulse"></div>
+        </div>
+        <p class="text-xs text-slate-300 font-mono tracking-widest uppercase mt-3 animate-pulse" x-text="loadingText"></p>
+        <div class="absolute inset-0 pointer-events-none overflow-hidden opacity-20">
+            <div class="w-full h-1 bg-neon-cyan scanline"></div>
+        </div>
+    </div>
+
+    <!-- Background Ambient Lighting & Floating Money / Coins Illusion -->
+    <div class="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+        <div class="absolute -top-40 -left-40 w-96 h-96 bg-dana-500/20 rounded-full blur-[120px] animate-pulse-slow"></div>
+        <div class="absolute top-1/2 -right-40 w-[500px] h-[500px] bg-neon-cyan/10 rounded-full blur-[150px] animate-pulse-slow" style="animation-delay: 2s;"></div>
+        <div class="absolute -bottom-40 left-1/3 w-96 h-96 bg-blue-600/15 rounded-full blur-[140px] animate-pulse-slow" style="animation-delay: 4s;"></div>
+
+        <!-- Floating Money Bills & Coins (Visible only in Lobby) -->
+        <template x-if="currentScreen === 'lobby'">
+            <div class="absolute inset-0 pointer-events-none overflow-hidden z-0">
+                <!-- Money Bill 1 -->
+                <div class="absolute w-14 h-8 bg-emerald-500/15 border border-emerald-400/30 rounded-md flex items-center justify-center text-[10px] text-emerald-300 font-mono shadow-lg animate-float" style="top: 15%; left: 10%; animation-duration: 7s; animation-delay: 0s;">
+                    Rp 50K
+                </div>
+                <!-- Coin 1 -->
+                <div class="absolute w-8 h-8 rounded-full bg-gradient-to-tr from-amber-500 to-yellow-300 border border-yellow-200/50 flex items-center justify-center text-[10px] text-amber-950 font-black shadow-lg animate-float" style="top: 25%; left: 85%; animation-duration: 5s; animation-delay: 1s;">
+                    Rp
+                </div>
+                <!-- Money Bill 2 -->
+                <div class="absolute w-16 h-9 bg-dana-500/20 border border-neon-cyan/40 rounded-md flex items-center justify-center text-[10px] text-neon-cyan font-mono shadow-lg animate-float" style="top: 70%; left: 15%; animation-duration: 9s; animation-delay: 2s;">
+                    Rp 100K
+                </div>
+                <!-- Coin 2 -->
+                <div class="absolute w-10 h-10 rounded-full bg-gradient-to-tr from-cyan-400 to-blue-500 border border-cyan-200/50 flex items-center justify-center text-[10px] text-white font-black shadow-lg animate-float" style="top: 60%; left: 80%; animation-duration: 6s; animation-delay: 1.5s;">
+                    ℗
+                </div>
+                <!-- Money Bill 3 -->
+                <div class="absolute w-12 h-7 bg-emerald-500/20 border border-emerald-400/40 rounded-md flex items-center justify-center text-[9px] text-emerald-300 font-mono shadow-lg animate-float" style="top: 35%; left: 25%; animation-duration: 8s; animation-delay: 3s;">
+                    DANA
+                </div>
+                <!-- Coin 3 -->
+                <div class="absolute w-7 h-7 rounded-full bg-gradient-to-tr from-yellow-400 to-amber-600 border border-yellow-300/50 flex items-center justify-center text-[9px] text-white font-bold shadow-lg animate-float" style="top: 80%; left: 40%; animation-duration: 7s; animation-delay: 2.5s;">
+                    $
+                </div>
+                <!-- Money Bill 4 -->
+                <div class="absolute w-16 h-9 bg-blue-600/20 border border-blue-400/30 rounded-md flex items-center justify-center text-[10px] text-blue-200 font-mono shadow-lg animate-float" style="top: 20%; left: 70%; animation-duration: 10s; animation-delay: 0.5s;">
+                    QRIS
+                </div>
+                <!-- Coin 4 -->
+                <div class="absolute w-9 h-9 rounded-full bg-gradient-to-tr from-amber-400 to-yellow-500 border border-yellow-200/50 flex items-center justify-center text-[10px] text-amber-950 font-black shadow-lg animate-float" style="top: 45%; left: 90%; animation-duration: 6.5s; animation-delay: 3.5s;">
+                    Rp
+                </div>
+            </div>
+        </template>
+    </div>
+
+    <!-- Header Navigation (Visible when not in Lobby) -->
+    <header class="relative z-20 w-full px-6 py-4 glass-panel border-b border-dana-500/20 flex items-center justify-between transition-all duration-500" x-show="currentScreen !== 'lobby'" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 -translate-y-4" x-transition:enter-end="opacity-100 translate-y-0">
+        <div class="flex items-center space-x-3 cursor-pointer" @click="currentScreen = 'lobby'">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-dana-500 to-neon-cyan flex items-center justify-center shadow-lg shadow-dana-500/30">
+                <i data-lucide="shield-check" class="w-6 h-6 text-white"></i>
+            </div>
+            <div>
+                <h1 class="font-extrabold text-lg tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-white via-dana-100 to-neon-cyan">DANA FINTECH</h1>
+                <p class="text-xs text-dana-500 font-medium tracking-widest uppercase">Analisis Kelompok B</p>
+            </div>
+        </div>
+
+        <div class="flex items-center space-x-2 md:space-x-4">
+            <button @click="currentScreen = 'lobby'" class="px-3 py-1.5 md:px-4 md:py-2 text-xs md:text-sm font-medium rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition flex items-center space-x-2">
+                <i data-lucide="home" class="w-4 h-4"></i>
+                <span class="hidden sm:inline">Lobby</span>
+            </button>
+            <button @click="currentScreen = 'members'" class="px-3 py-1.5 md:px-4 md:py-2 text-xs md:text-sm font-medium rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition flex items-center space-x-2" :class="{'bg-dana-500/20 text-neon-cyan border-dana-500/50': currentScreen === 'members'}">
+                <i data-lucide="users" class="w-4 h-4"></i>
+                <span>Kelompok B</span>
+            </button>
+            <button @click="currentScreen = 'content'" class="px-3 py-1.5 md:px-4 md:py-2 text-xs md:text-sm font-medium rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition flex items-center space-x-2" :class="{'bg-dana-500/20 text-neon-cyan border-dana-500/50': currentScreen === 'content'}">
+                <i data-lucide="book-open" class="w-4 h-4"></i>
+                <span>Materi Analisis</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="relative z-10 flex-grow flex flex-col justify-center items-center w-full max-w-7xl mx-auto px-4 py-8">
+
+        <!-- ========================================== -->
+        <!-- 1. LOBBY SCREEN (HOME) -->
+        <!-- ========================================== -->
+        <section x-show="currentScreen === 'lobby'" x-transition:enter="transition ease-out duration-500" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" class="w-full grid grid-cols-1 lg:grid-cols-12 gap-8 items-center justify-center my-auto py-6">
+            
+            <!-- Left Column: Title & Action -->
+            <div class="lg:col-span-7 text-center lg:text-left flex flex-col items-center lg:items-start">
+
+                <!-- Title & Subtitle -->
+                <h1 class="text-4xl md:text-6xl font-black tracking-tight text-white mb-6 text-glow">
+                    Analisis Produk <br class="hidden sm:inline"><span class="text-transparent bg-clip-text bg-gradient-to-r from-dana-500 via-neon-cyan to-blue-400">Fintech DANA</span>
+                </h1>
+
+                <!-- Action Button -->
+                <button @click="triggerLoading('members', 'Memuat Modul Anggota Kelompok B...')" class="btn-glow px-8 py-4 rounded-2xl bg-gradient-to-r from-dana-500 to-blue-600 hover:from-dana-600 hover:to-blue-700 text-white font-bold text-lg tracking-wide shadow-xl shadow-dana-500/30 border border-neon-cyan/40 flex items-center space-x-3 group cursor-pointer">
+                    <span>Mulai Eksplorasi</span>
+                    <i data-lucide="arrow-right" class="w-5 h-5 group-hover:translate-x-1.5 transition-transform"></i>
+                </button>
+            </div>
+
+            <!-- Right Column: Interactive 3D Tilt DANA Smartphone Mock-up -->
+        <div class="lg:col-span-5 flex justify-center perspective-1000 py-6">
+            <div id="phone-container" 
+                 @mousemove="handlePhoneMove(event)" 
+                 @mouseleave="resetPhoneTilt()"
+                 class="relative w-[280px] sm:w-[300px] h-[580px] rounded-[40px] bg-slate-900 border-4 border-slate-700/80 shadow-[0_30px_70px_-15px_rgba(0,134,249,0.5)] select-none cursor-grab transition-shadow duration-300 hover:shadow-[0_40px_90px_-15px_rgba(0,242,254,0.6)] overflow-hidden"
+                 style="transform-style: preserve-3d; will-change: transform;">
+                
+                <!-- Phone Notch & Speaker -->
+                <div class="absolute top-0 left-1/2 transform -translate-x-1/2 w-32 h-6 bg-slate-950 rounded-b-2xl z-30 flex items-center justify-center">
+                    <div class="w-12 h-1.5 bg-slate-800 rounded-full"></div>
+                    <div class="w-2.5 h-2.5 bg-slate-800 rounded-full ml-2"></div>
+                </div>
+
+                <!-- Phone Screen Content (DANA App UI Mock-up) -->
+                <div class="w-full h-full bg-gradient-to-b from-dana-900 via-[#06152b] to-dana-950 p-4 pt-8 flex flex-col justify-between text-slate-100 overflow-hidden relative">
+                    
+                    <!-- Ambient glow inside phone -->
+                    <div class="absolute top-10 right-0 w-32 h-32 bg-dana-500/20 rounded-full blur-2xl pointer-events-none"></div>
+
+                    <!-- App Header -->
+                    <div class="flex items-center justify-between z-10 mt-2">
+                        <div class="flex items-center space-x-2">
+                            <div class="w-8 h-8 rounded-lg bg-dana-500 flex items-center justify-center font-black text-white text-sm shadow-md">D</div>
+                            <span class="font-bold text-sm tracking-wide text-white">DANA</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-500/30 flex items-center space-x-1">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                                <span>Aman</span>
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Saldo Card Widget -->
+                    <div class="glass-panel p-4 rounded-2xl border border-dana-500/30 z-10 shadow-lg relative overflow-hidden">
+                        <div class="absolute -right-6 -bottom-6 w-20 h-20 bg-neon-cyan/10 rounded-full blur-xl"></div>
+                        <p class="text-[11px] text-slate-400 font-medium">Saldo DANA</p>
+                        <div class="flex items-baseline justify-between mt-1">
+                            <h3 class="text-xl font-extrabold text-white tracking-tight">Rp 12.450.800</h3>
+                            <span class="text-[10px] text-neon-cyan font-semibold flex items-center space-x-0.5">
+                                <span>Privasi</span>
+                                <i data-lucide="eye" class="w-3 h-3"></i>
+                            </span>
+                        </div>
+                        <div class="mt-3 pt-3 border-t border-slate-800/80 flex items-center justify-between text-[11px]">
+                            <span class="text-slate-300 flex items-center space-x-1">
+                                <i data-lucide="shield-check" class="w-3.5 h-3.5 text-neon-cyan"></i>
+                                <span>DANA Protection Active</span>
+                            </span>
+                            <span class="text-dana-500 font-bold">V.2026</span>
+                        </div>
+                    </div>
+
+                    <!-- Quick Menu Grid -->
+                    <div class="grid grid-cols-4 gap-2 z-10">
+                        <div class="glass-card p-2 rounded-xl text-center flex flex-col items-center justify-center hover:border-dana-500/50 transition">
+                            <div class="w-9 h-9 rounded-xl bg-dana-500/20 text-neon-cyan flex items-center justify-center mb-1">
+                                <i data-lucide="send" class="w-4 h-4"></i>
+                            </div>
+                            <span class="text-[10px] text-slate-300 font-medium">Kirim</span>
+                        </div>
+                        <div class="glass-card p-2 rounded-xl text-center flex flex-col items-center justify-center hover:border-dana-500/50 transition">
+                            <div class="w-9 h-9 rounded-xl bg-dana-500/20 text-neon-cyan flex items-center justify-center mb-1">
+                                <i data-lucide="qr-code" class="w-4 h-4"></i>
+                            </div>
+                            <span class="text-[10px] text-slate-300 font-medium">QRIS</span>
+                        </div>
+                        <div class="glass-card p-2 rounded-xl text-center flex flex-col items-center justify-center hover:border-dana-500/50 transition">
+                            <div class="w-9 h-9 rounded-xl bg-dana-500/20 text-neon-cyan flex items-center justify-center mb-1">
+                                <i data-lucide="smartphone" class="w-4 h-4"></i>
+                            </div>
+                            <span class="text-[10px] text-slate-300 font-medium">Pulsa</span>
+                        </div>
+                        <div class="glass-card p-2 rounded-xl text-center flex flex-col items-center justify-center hover:border-dana-500/50 transition">
+                            <div class="w-9 h-9 rounded-xl bg-dana-500/20 text-neon-cyan flex items-center justify-center mb-1">
+                                <i data-lucide="more-horizontal" class="w-4 h-4"></i>
+                            </div>
+                            <span class="text-[10px] text-slate-300 font-medium">Semua</span>
+                        </div>
+                    </div>
+
+                    <!-- Recent Transactions Feed -->
+                    <div class="glass-panel p-3 rounded-2xl z-10 space-y-2">
+                        <div class="flex items-center justify-between text-[11px] mb-1">
+                            <span class="font-bold text-slate-300">Riwayat Transaksi</span>
+                            <span class="text-neon-cyan text-[10px]">Live Sync</span>
+                        </div>
+                        <div class="flex items-center justify-between text-[11px] py-1 border-b border-slate-800">
+                            <div class="flex items-center space-x-2">
+                                <div class="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center"><i data-lucide="arrow-down-left" class="w-3 h-3"></i></div>
+                                <div>
+                                    <p class="font-semibold text-white">Top Up Saldo</p>
+                                    <p class="text-[9px] text-slate-400">Hari ini, 10:15</p>
+                                </div>
+                            </div>
+                            <span class="text-emerald-400 font-bold">+Rp 500.000</span>
+                        </div>
+                        <div class="flex items-center justify-between text-[11px] py-1">
+                            <div class="flex items-center space-x-2">
+                                <div class="w-6 h-6 rounded-full bg-rose-500/20 text-rose-400 flex items-center justify-center"><i data-lucide="arrow-up-right" class="w-3 h-3"></i></div>
+                                <div>
+                                    <p class="font-semibold text-white">Bayar Merchant QRIS</p>
+                                    <p class="text-[9px] text-slate-400">Kemarin, 14:20</p>
+                                </div>
+                            </div>
+                            <span class="text-rose-400 font-bold">-Rp 45.000</span>
+                        </div>
+                    </div>
+
+                    <!-- Phone Bottom Indicator Bar -->
+                    <div class="w-28 h-1 bg-slate-600 rounded-full mx-auto z-10 mb-1"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+        <!-- ========================================== -->
+        <!-- 2. MEMBER REVEAL SCREEN (KELOMPOK B) -->
+        <!-- ========================================== -->
+        <section x-show="currentScreen === 'members'" x-transition:enter="transition ease-out duration-500" x-transition:enter-start="opacity-0 translate-y-8" x-transition:enter-end="opacity-100 translate-y-0" class="w-full py-6">
+            
+            <div class="text-center mb-12">
+                <div class="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-dana-500/10 border border-dana-500/30 text-neon-cyan text-xs font-semibold mb-3 shadow-[0_0_15px_rgba(0,242,254,0.15)]">
+                    <i data-lucide="shield" class="w-3.5 h-3.5"></i>
+                    <span>TIM PENELITI & ANALIS</span>
+                </div>
+                <h2 class="text-3xl md:text-5xl font-extrabold text-white tracking-tight mb-3">
+                    Kenali Anggota <span class="text-transparent bg-clip-text bg-gradient-to-r from-dana-500 via-neon-cyan to-blue-400">Kelompok B</span>
+                </h2>
+            </div>
+
+            <!-- Staggered Holographic Member Cards Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+                <template x-for="(member, index) in members" :key="index">
+                    <div @click="toggleMember(index)" 
+                         class="glass-card rounded-2xl p-6 cursor-pointer relative overflow-hidden group border transition-all duration-500"
+                         :class="member.unlocked ? 'border-neon-cyan/80 bg-gradient-to-b from-dana-900/90 via-dana-950/95 to-[#040d1a] shadow-[0_0_35px_rgba(0,242,254,0.25)]' : 'border-slate-800 hover:border-dana-500/50 bg-slate-900/60'">
+                        
+                        <!-- Ambient card glow when unlocked -->
+                        <div class="absolute -top-12 -right-12 w-32 h-32 rounded-full blur-2xl pointer-events-none transition-all duration-500"
+                             :class="member.unlocked ? 'bg-neon-cyan/20' : 'bg-dana-500/10'"></div>
+
+                        <!-- Top Indicator & Security Badge -->
+                        <div class="flex items-center justify-between mb-5 relative z-10">
+                            <span class="w-9 h-9 rounded-xl bg-dana-500/15 text-neon-cyan font-mono font-bold text-sm flex items-center justify-center border border-dana-500/40 shadow-inner">
+                                <span x-text="'0' + (index + 1)"></span>
+                            </span>
+                            <div class="flex items-center space-x-2 px-3 py-1 rounded-full text-xs font-medium transition-all duration-300"
+                                  :class="member.unlocked ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-[0_0_10px_rgba(16,185,129,0.2)]' : 'bg-amber-500/10 text-amber-300 border border-amber-500/30'">
+                                <i :data-lucide="member.unlocked ? 'unlock' : 'lock'" class="w-3.5 h-3.5"></i>
+                                <span x-text="member.unlocked ? 'ACCESS GRANTED' : 'ENCRYPTED'"></span>
+                            </div>
+                        </div>
+
+                        <!-- Identity Info Area -->
+                        <div class="relative z-10 space-y-3 min-h-[110px] flex flex-col justify-center">
+                            <!-- Name -->
+                            <div>
+                                <span class="text-[10px] uppercase font-semibold text-slate-500 tracking-wider block mb-0.5">Nama Peneliti</span>
+                                <h3 class="text-lg md:text-xl font-bold text-white transition-all duration-500"
+                                    :class="member.unlocked ? 'text-transparent bg-clip-text bg-gradient-to-r from-white via-dana-100 to-neon-cyan' : 'blurred-secret'"
+                                    x-text="member.name"></h3>
+                            </div>
+
+                            <!-- NPM -->
+                            <div>
+                                <span class="text-[10px] uppercase font-semibold text-slate-500 tracking-wider block mb-0.5">Nomor Pokok Mahasiswa (NPM)</span>
+                                <p class="text-sm font-mono tracking-widest transition-all duration-500"
+                                   :class="member.unlocked ? 'text-neon-cyan font-semibold' : 'blurred-secret'"
+                                   x-text="member.npm"></p>
+                            </div>
+                        </div>
+
+                        <!-- Card Footer Action Prompt -->
+                        <div class="mt-5 pt-4 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400 relative z-10">
+                            <span class="flex items-center space-x-1.5">
+                                <i data-lucide="fingerprint" class="w-4 h-4 text-dana-500"></i>
+                                <span x-text="member.unlocked ? 'Klik untuk Mengunci Kembali' : 'Klik untuk Dekripsi Data'"></span>
+                            </span>
+                            <i data-lucide="chevron-right" class="w-4 h-4 transition-transform group-hover:translate-x-1" :class="member.unlocked ? 'text-neon-cyan' : 'text-slate-600'"></i>
+                        </div>
+
+                        <!-- Bottom Active Border Line -->
+                        <div class="absolute bottom-0 left-0 right-0 h-1 transition-all duration-500"
+                             :class="member.unlocked ? 'bg-gradient-to-r from-dana-500 via-neon-cyan to-blue-400 opacity-100' : 'bg-gradient-to-r from-dana-500/20 to-transparent opacity-0 group-hover:opacity-100'"></div>
+                    </div>
+                </template>
+            </div>
+
+            <!-- Navigation to Main Content Button -->
+            <div class="mt-12 text-center">
+                <button @click="triggerLoading('content', 'Menyiapkan 9 Materi Analisis...')" class="btn-glow px-8 py-3.5 rounded-xl bg-gradient-to-r from-dana-500 to-blue-600 hover:from-dana-600 text-white font-bold text-sm tracking-wide shadow-lg shadow-dana-500/30 border border-neon-cyan/40 inline-flex items-center space-x-3 cursor-pointer">
+                    <span>Lanjut ke 9 Materi Analisis Utama</span>
+                    <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </section>
+
+
+        <!-- ========================================== -->
+        <!-- 3. MAIN CONTENT SCREEN (9 SUB-MATERI) -->
+        <!-- ========================================== -->
+        <section x-show="currentScreen === 'content'" x-transition:enter="transition ease-out duration-500" x-transition:enter-start="opacity-0 translate-y-8" x-transition:enter-end="opacity-100 translate-y-0" class="w-full py-4 max-w-6xl mx-auto">
+            
+            <!-- Header for Analysis Section -->
+            <div class="glass-panel rounded-2xl p-6 md:p-8 border border-dana-500/30 mb-8 flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <div class="w-12 h-12 rounded-xl bg-dana-500/20 text-neon-cyan flex items-center justify-center border border-dana-500/40">
+                        <i data-lucide="book-open" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <span class="text-xs font-mono text-dana-500 uppercase tracking-widest">Modul Penelitian Komprehensif</span>
+                        <h2 class="text-2xl md:text-3xl font-extrabold text-white tracking-tight">9 Materi Analisis Utama</h2>
+                    </div>
+                </div>
+                <button @click="currentScreen = 'members'" class="px-4 py-2 text-xs font-medium rounded-xl bg-slate-800 hover:bg-slate-700 text-neon-cyan border border-slate-700 transition flex items-center space-x-2">
+                    <i data-lucide="users" class="w-4 h-4"></i>
+                    <span class="hidden sm:inline">Kelompok B</span>
+                </button>
+            </div>
+
+            <!-- Grid of 9 Separate Topic Columns with Brief Explanations -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <template x-for="(topic, idx) in topics" :key="idx">
+                    <div @click="openTopicDetail(idx)" class="glass-card rounded-2xl p-6 border border-slate-800 hover:border-neon-cyan/50 flex flex-col justify-between transition-all duration-300 cursor-pointer group hover:shadow-[0_0_25px_rgba(0,242,254,0.2)]">
+                        <div>
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="w-9 h-9 rounded-xl font-mono text-xs font-bold flex items-center justify-center bg-dana-500/20 text-neon-cyan border border-dana-500/40"
+                                      x-text="'0' + (idx + 1)"></span>
+                                <i :data-lucide="topic.icon" class="w-5 h-5 text-dana-500 group-hover:text-neon-cyan transition-colors"></i>
+                            </div>
+                            <h3 class="text-lg font-bold text-white mb-2 group-hover:text-neon-cyan transition-colors" x-text="topic.title"></h3>
+                            <!-- Brief Preview Explanation added here -->
+                            <p class="text-xs text-slate-300 line-clamp-3 leading-relaxed" x-text="topic.preview"></p>
+                        </div>
+                        <div class="mt-6 pt-4 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
+                            <span class="font-mono text-neon-cyan">Buka Kolom Materi</span>
+                            <i data-lucide="arrow-right" class="w-4 h-4 text-neon-cyan group-hover:translate-x-1 transition-transform"></i>
+                        </div>
+                    </div>
+                </template>
+            </div>
+
+            <!-- Back to Lobby or Member Hub -->
+            <div class="mt-10 text-center">
+                <button @click="triggerLoading('lobby', 'Kembali ke Lobby Utama...')" class="btn-glow px-8 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-sm tracking-wide border border-slate-700 inline-flex items-center space-x-2 cursor-pointer">
+                    <i data-lucide="home" class="w-4 h-4"></i>
+                    <span>Kembali ke Lobby</span>
+                </button>
+            </div>
+        </section>
+
+
+        <!-- ========================================== -->
+        <!-- 4. DETAILED TOPIC VIEW SCREEN -->
+        <!-- ========================================== -->
+        <section x-show="currentScreen === 'topic-detail'" x-transition:enter="transition ease-out duration-500" x-transition:enter-start="opacity-0 translate-y-8" x-transition:enter-end="opacity-100 translate-y-0" class="w-full py-4 max-w-4xl mx-auto" x-cloak>
+            
+            <!-- Navigation Indicator & Back Button -->
+            <div class="mb-6 flex items-center justify-between">
+                <button @click="currentScreen = 'content'" class="px-4 py-2 text-xs font-semibold rounded-xl bg-slate-800 hover:bg-slate-700 text-neon-cyan border border-slate-700 transition flex items-center space-x-2 cursor-pointer">
+                    <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                    <span>Kembali ke Daftar Materi</span>
+                </button>
+                <div class="flex items-center space-x-2 px-3 py-1 rounded-full bg-dana-500/10 border border-dana-500/30 text-neon-cyan text-xs font-mono">
+                    <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
+                    <span x-text="'Materi 0' + (activeTopicIndex + 1) + ' dari 09'"></span>
+                </div>
+            </div>
+
+            <!-- Detailed Content Card -->
+            <div class="glass-panel rounded-3xl p-6 md:p-10 border border-dana-500/30 relative overflow-hidden">
+                <div class="absolute -right-20 -top-20 w-64 h-64 bg-dana-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+                <!-- Topic Header -->
+                <div class="flex items-center space-x-4 mb-8">
+                    <div class="w-14 h-14 rounded-2xl bg-dana-500/20 text-neon-cyan flex items-center justify-center border border-dana-500/40 shadow-inner">
+                        <i :data-lucide="topics[activeTopicIndex].icon" class="w-7 h-7"></i>
+                    </div>
+                    <div>
+                        <span class="text-xs font-mono text-dana-500 uppercase tracking-widest" x-text="'Analisis Bagian 0' + (activeTopicIndex + 1)"></span>
+                        <h2 class="text-2xl md:text-4xl font-extrabold text-white tracking-tight" x-text="topics[activeTopicIndex].title"></h2>
+                    </div>
+                </div>
+
+                <!-- Topic Dynamic Body Content -->
+                <div class="text-slate-300 leading-relaxed space-y-6 text-base md:text-lg">
+                    
+                    <!-- 1. PENDAHULUAN (Feature: Digital Growth Index Calculator) -->
+                    <template x-if="activeTopicIndex === 0">
+                        <div class="space-y-6">
+                            <div class="space-y-3">
+                                <p class="font-medium text-neon-cyan text-base">Transformasi Finansial Digital di Indonesia & Growth Calculator</p>
+                                <p class="text-sm md:text-base leading-relaxed">Era transformasi finansial digital di Indonesia mengalami lonjakan eksponensial seiring dengan penetrasi smartphone yang masif, perluasan jaringan internet seluler hingga ke daerah 3T (Tertinggal, Terdepan, dan Terluar), serta peningkatan literasi digital masyarakat secara umum.</p>
+                                <p class="text-sm md:text-base leading-relaxed">Dompet digital (e-wallet) kini tidak lagi sekadar instrumen alternatif pembayaran tunai, melainkan telah bertransformasi menjadi pilar utama ekosistem keuangan terbuka (open finance) yang menjembatani inklusi keuangan bagi jutaan masyarakat unbanked dan underbanked di tanah air.</p>
+                            </div>
+
+                            <!-- Interactive Growth Calculator Feature -->
+                            <div class="glass-card p-5 rounded-2xl border border-dana-500/30 space-y-4 max-w-xl mx-auto">
+                                <h4 class="font-bold text-sm text-white flex items-center space-x-2">
+                                    <i data-lucide="trending-up" class="w-4 h-4 text-neon-cyan"></i>
+                                    <span>Simulasi Pertumbuhan Cashless Society Indonesia</span>
+                                </h4>
+                                <div>
+                                    <div class="flex justify-between text-xs text-slate-400 mb-1">
+                                        <span>Tahun Proyeksi: <strong class="text-neon-cyan" x-text="growthYear"></strong></span>
+                                        <span>Adopsi Pengguna: <strong class="text-emerald-400" x-text="growthPercent + '%'"></strong></span>
+                                    </div>
+                                    <input type="range" min="2020" max="2030" x-model="growthYear" @input="updateGrowth()" class="w-full accent-neon-cyan cursor-pointer">
+                                </div>
+                                <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs flex items-center justify-between">
+                                    <span class="text-slate-300">Estimasi Volume Transaksi Nasional:</span>
+                                    <span class="text-neon-cyan font-mono font-bold" x-text="growthVolume"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+
+                    <!-- 2. PROFIL PERUSAHAAN (Feature: Company Milestone Timeline Explorer) -->
+                    <template x-if="activeTopicIndex === 1">
+                        <div class="space-y-6">
+                            <div class="space-y-3">
+                                <p class="font-medium text-neon-cyan text-base">PT Espay Debit Indonesia Koe (DANA) & Milestone Timeline</p>
+                                <p class="text-sm md:text-base leading-relaxed">Didirikan pada tahun 2018 di bawah naungan PT Espay Debit Indonesia Koe, DANA hadir dengan visi mendemokratisasi akses keuangan yang aman dan terpercaya bagi seluruh lapisan masyarakat Indonesia. Di bawah kepemimpinan CEO Vince Iswara, DANA mengusung arsitektur open-platform yang unik.</p>
+                                <p class="text-sm md:text-base leading-relaxed">Sebagai salah satu pemain dompet digital papan atas, DANA telah memperoleh lisensi resmi dari Bank Indonesia sebagai Penyelenggara Jasa Sistem Pembayaran (PJSP) berlisensi penuh, mencakup e-money, transfer dana, dan partisipasi aktif dalam QRIS nasional.</p>
+                            </div>
+
+                            <!-- Interactive Milestone Explorer Feature -->
+                            <div class="glass-card p-5 rounded-2xl border border-dana-500/30 space-y-4 max-w-xl mx-auto">
+                                <div class="flex items-center justify-between">
+                                    <h4 class="font-bold text-sm text-white">Eksplorasi Milestone DANA</h4>
+                                    <span class="text-xs font-mono bg-dana-500/20 text-neon-cyan px-2 py-0.5 rounded" x-text="'Tahun ' + selectedMilestone.year"></span>
+                                </div>
+                                <div class="grid grid-cols-4 gap-2">
+                                    <template x-for="(m, mi) in milestones" :key="mi">
+                                        <button @click="selectedMilestone = m" class="py-2 rounded-lg text-xs font-bold border transition" :class="selectedMilestone.year === m.year ? 'bg-dana-500 text-white border-neon-cyan shadow-lg' : 'bg-slate-900 text-slate-400 border-slate-800 hover:border-dana-500'" x-text="m.year"></button>
+                                    </template>
+                                </div>
+                                <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs">
+                                    <p class="font-semibold text-white mb-1" x-text="selectedMilestone.title"></p>
+                                    <p class="text-slate-400 text-[11px]" x-text="selectedMilestone.desc"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+
+                    <!-- 3. PRODUK DAN LAYANAN UTAMA (Interactive DANA Smartphone Simulator) -->
+                    <template x-if="activeTopicIndex === 2">
+                        <div class="space-y-6">
+                            <div class="space-y-2">
+                                <p class="font-medium text-neon-cyan">Solusi Layanan Finansial Terintegrasi & Live Simulator</p>
+                                <p class="text-sm text-slate-300">Gunakan simulator smartphone DANA di bawah ini untuk mendemonstrasikan fitur-fitur utama seperti Cek Saldo, QRIS Scanner, Kirim Uang, dan Riwayat Transaksi secara langsung saat presentasi.</p>
+                            </div>
+
+                            <!-- Interactive Live DANA Phone Simulator Container -->
+                            <div class="flex justify-center my-6">
+                                <div class="relative w-[300px] h-[600px] rounded-[42px] bg-slate-900 border-4 border-slate-700/85 shadow-[0_30px_70px_-15px_rgba(0,134,249,0.5)] overflow-hidden flex flex-col justify-between">
+                                    
+                                    <!-- Phone Notch -->
+                                    <div class="absolute top-0 left-1/2 transform -translate-x-1/2 w-32 h-6 bg-slate-950 rounded-b-2xl z-30 flex items-center justify-center">
+                                        <div class="w-12 h-1.5 bg-slate-800 rounded-full"></div>
+                                        <div class="w-2 h-2 bg-slate-800 rounded-full ml-2"></div>
+                                    </div>
+
+                                    <!-- Simulator App Header -->
+                                    <div class="w-full bg-gradient-to-b from-dana-900 to-[#06152b] p-4 pt-8 border-b border-dana-500/20 flex items-center justify-between z-20">
+                                        <div class="flex items-center space-x-2">
+                                            <div class="w-7 h-7 rounded-lg bg-dana-500 flex items-center justify-center font-black text-white text-xs">D</div>
+                                            <span class="font-bold text-sm text-white">DANA Live</span>
+                                        </div>
+                                        <span class="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-500/30 font-mono">Connected</span>
+                                    </div>
+
+                                    <!-- Simulator Screen Dynamic Display Area -->
+                                    <div class="flex-grow bg-slate-950 p-4 flex flex-col justify-between relative overflow-y-auto">
+                                        
+                                        <!-- STATE 1: HOME TAB -->
+                                        <template x-if="simTab === 'home'">
+                                            <div class="space-y-4 animate-fade-in">
+                                                <div class="glass-panel p-4 rounded-2xl border border-dana-500/30 shadow-lg">
+                                                    <p class="text-[11px] text-slate-400">Saldo Dompet Digital</p>
+                                                    <h3 class="text-xl font-extrabold text-white mt-1" x-text="simBalance"></h3>
+                                                    <div class="mt-2 text-[10px] text-emerald-400 flex items-center space-x-1">
+                                                        <i data-lucide="shield-check" class="w-3 h-3"></i>
+                                                        <span>DANA Protection Active</span>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Quick Actions -->
+                                                <div class="grid grid-cols-2 gap-2">
+                                                    <button @click="simTab = 'qris'" class="glass-card p-3 rounded-xl text-left border border-slate-800 hover:border-neon-cyan transition flex flex-col items-center justify-center space-y-1">
+                                                        <div class="w-10 h-10 rounded-xl bg-dana-500/20 text-neon-cyan flex items-center justify-center">
+                                                            <i data-lucide="qr-code" class="w-5 h-5"></i>
+                                                        </div>
+                                                        <span class="text-xs font-semibold text-white">Scan QRIS</span>
+                                                    </button>
+                                                    <button @click="simTab = 'transfer'" class="glass-card p-3 rounded-xl text-left border border-slate-800 hover:border-neon-cyan transition flex flex-col items-center justify-center space-y-1">
+                                                        <div class="w-10 h-10 rounded-xl bg-dana-500/20 text-neon-cyan flex items-center justify-center">
+                                                            <i data-lucide="send" class="w-5 h-5"></i>
+                                                        </div>
+                                                        <span class="text-xs font-semibold text-white">Kirim Uang</span>
+                                                    </button>
+                                                </div>
+
+                                                <!-- Recent Activity Summary -->
+                                                <div class="glass-panel p-3 rounded-xl border border-slate-800 text-xs space-y-2">
+                                                    <p class="font-bold text-slate-300">Aktivitas Terakhir</p>
+                                                    <div class="flex justify-between text-[11px] text-slate-400">
+                                                        <span>Merchant QRIS Kopi Kenangan</span>
+                                                        <span class="text-rose-400 font-bold">-Rp 24.000</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </template>
+
+                                        <!-- STATE 2: QRIS SCANNER SIMULATOR -->
+                                        <template x-if="simTab === 'qris'">
+                                            <div class="space-y-4 text-center my-auto animate-fade-in">
+                                                <div class="w-40 h-40 mx-auto rounded-2xl border-2 border-dashed border-neon-cyan flex items-center justify-center relative bg-dana-900/40">
+                                                    <div class="absolute inset-2 border border-dana-500/50 rounded-xl flex items-center justify-center">
+                                                        <i data-lucide="qr-code" class="w-16 h-16 text-neon-cyan animate-pulse"></i>
+                                                    </div>
+                                                    <div class="absolute inset-x-0 h-0.5 bg-neon-cyan shadow-[0_0_10px_#00f2fe] scanline"></div>
+                                                </div>
+                                                <div>
+                                                    <p class="text-sm font-bold text-white">Scan QRIS Nasional</p>
+                                                    <p class="text-[11px] text-slate-400 mt-1" x-text="qrisStatus"></p>
+                                                </div>
+                                                <button @click="simulateQrisPayment()" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-dana-500 to-blue-600 text-white font-bold text-xs shadow-md">
+                                                    Simulasi Bayar Rp 25.000
+                                                </button>
+                                            </div>
+                                        </template>
+
+                                        <!-- STATE 3: TRANSFER SIMULATOR -->
+                                        <template x-if="simTab === 'transfer'">
+                                            <div class="space-y-3 my-auto animate-fade-in">
+                                                <p class="text-xs font-bold text-white">Kirim Uang ke Nomor HP</p>
+                                                <div>
+                                                    <label class="text-[10px] text-slate-400 block mb-1">Nomor Tujuan</label>
+                                                    <input type="text" value="081234567890" readonly class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono">
+                                                </div>
+                                                <div>
+                                                    <label class="text-[10px] text-slate-400 block mb-1">Nominal (Rp)</label>
+                                                    <input type="text" value="100.000" readonly class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono">
+                                                </div>
+                                                <button @click="simulateTransfer()" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-bold text-xs shadow-md mt-2">
+                                                    Konfirmasi & Kirim Instan
+                                                </button>
+                                            </div>
+                                        </template>
+
+                                        <!-- Simulator Bottom Navigation Bar -->
+                                        <div class="pt-3 border-t border-slate-800 flex items-center justify-around z-20 bg-slate-950">
+                                            <button @click="simTab = 'home'" class="flex flex-col items-center space-y-0.5" :class="simTab === 'home' ? 'text-neon-cyan' : 'text-slate-500'">
+                                                <i data-lucide="home" class="w-4 h-4"></i>
+                                                <span class="text-[9px]">Home</span>
+                                            </button>
+                                            <button @click="simTab = 'qris'" class="flex flex-col items-center space-y-0.5" :class="simTab === 'qris' ? 'text-neon-cyan' : 'text-slate-500'">
+                                                <i data-lucide="qr-code" class="w-4 h-4"></i>
+                                                <span class="text-[9px]">QRIS</span>
+                                            </button>
+                                            <button @click="simTab = 'transfer'" class="flex flex-col items-center space-y-0.5" :class="simTab === 'transfer' ? 'text-neon-cyan' : 'text-slate-500'">
+                                                <i data-lucide="send" class="w-4 h-4"></i>
+                                                <span class="text-[9px]">Kirim</span>
+                                            </button>
+                                        </div>
+
+                                    </div>
+
+                                    <!-- Phone Bottom Home Bar -->
+                                    <div class="w-24 h-1 bg-slate-600 rounded-full mx-auto my-1.5 z-30"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+
+                    <!-- 4. MODEL BISNIS (Feature: Revenue Stream Breakdown Calculator) -->
+                    <template x-if="activeTopicIndex === 3">
+                        <div class="space-y-6">
+                            <div class="space-y-3">
+                                <p class="font-medium text-neon-cyan text-base">Strategi Monetisasi B2B2C & Revenue Stream Calculator</p>
+                                <p class="text-sm md:text-base leading-relaxed">Model bisnis DANA berakar pada pendekatan B2B2C (Business-to-Business-to-Consumer) yang sangat adaptif. Alih-alih bergantung pada satu sumber pendapatan tunggal, DANA mendiversifikasi monetisasi melalui ekosistem terbuka yang menghubungkan merchant UMKM hingga korporasi besar.</p>
+                                <p class="text-sm md:text-base leading-relaxed">Sumber pendapatan utama mencakup perolehan dari Merchant Discount Rate (MDR) pada transaksi QRIS, penyediaan fitur digital biller (pembelian pulsa, token listrik, tagihan bulanan), serta komisi dari marketplace layanan keuangan seperti reksa dana, asuransi mikro, dan pinjaman digital legal yang terdaftar di OJK.</p>
+                            </div>
+
+                            <!-- Interactive Revenue Breakdown Feature -->
+                            <div class="glass-card p-5 rounded-2xl border border-dana-500/30 space-y-4 max-w-xl mx-auto">
+                                <h4 class="font-bold text-sm text-white">Simulasi Distribusi Pendapatan (Revenue Stream)</h4>
+                                <div class="grid grid-cols-3 gap-3 text-center">
+                                    <div class="p-3 rounded-xl bg-slate-950 border border-slate-800">
+                                        <span class="text-[10px] text-slate-400 block mb-1">MDR QRIS</span>
+                                        <span class="text-base font-bold text-neon-cyan">45%</span>
+                                    </div>
+                                    <div class="p-3 rounded-xl bg-slate-950 border border-slate-800">
+                                        <span class="text-[10px] text-slate-400 block mb-1">Digital Biller</span>
+                                        <span class="text-base font-bold text-emerald-400">35%</span>
+                                    </div>
+                                    <div class="p-3 rounded-xl bg-slate-950 border border-slate-800">
+                                        <span class="text-[10px] text-slate-400 block mb-1">Financial Services</span>
+                                        <span class="text-base font-bold text-amber-400">20%</span>
+                                    </div>
+                                </div>
+                                <div class="p-3 rounded-xl bg-dana-950 border border-dana-500/20 text-xs text-slate-300">
+                                    <p>Model terbuka (open platform) memastikan DANA dapat bersinergi dengan bank konvensional maupun lembaga keuangan mikro secara efisien.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+
+                    <!-- 5. ALUR PENGGUNAAN DAN TEKNOLOGI KEAMANAN (Interactive Security Simulator) -->
+                    <template x-if="activeTopicIndex === 4">
+                        <div class="space-y-6">
+                            <div class="space-y-2">
+                                <p class="font-medium text-neon-cyan">Sistem Keamanan Berlapis & AI Risk Engine Simulator</p>
+                                <p class="text-sm text-slate-300">Uji langsung simulasi verifikasi keamanan berlapis DANA (Biometrik, AI Risk Scoring, & PIN Verification) di bawah ini untuk demonstrasi saat presentasi.</p>
+                            </div>
+
+                            <!-- Interactive Security Simulator Widget -->
+                            <div class="glass-panel p-6 rounded-2xl border border-dana-500/40 space-y-4 max-w-lg mx-auto shadow-xl">
+                                <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+                                    <div class="flex items-center space-x-2">
+                                        <div class="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+                                            <i data-lucide="shield-check" class="w-4 h-4"></i>
+                                        </div>
+                                        <div>
+                                            <h4 class="font-bold text-sm text-white">DANA Risk Engine v4.2</h4>
+                                            <p class="text-[10px] text-slate-400">Status Proteksi: <span class="text-emerald-400 font-semibold">Active & Secure</span></p>
+                                        </div>
+                                    </div>
+                                    <span class="text-[10px] bg-dana-500/20 text-neon-cyan px-2 py-1 rounded-md font-mono" x-text="secStepText"></span>
+                                </div>
+
+                                <!-- Security Simulation Screen -->
+                                <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 text-center space-y-4 min-h-[160px] flex flex-col justify-center items-center">
+                                    
+                                    <!-- Step 1: Scan & Biometric -->
+                                    <template x-if="secStep === 1">
+                                        <div class="space-y-3 animate-fade-in">
+                                            <div class="w-14 h-14 mx-auto rounded-full bg-dana-500/20 text-neon-cyan flex items-center justify-center border border-dana-500/40">
+                                                <i data-lucide="fingerprint" class="w-8 h-8 animate-pulse"></i>
+                                            </div>
+                                            <p class="text-xs text-slate-300">Pindai Biometrik / Face ID untuk verifikasi awal transaksi.</p>
+                                            <button @click="runSecurityStep(2)" class="px-4 py-2 rounded-xl bg-dana-500 hover:bg-dana-600 text-white font-bold text-xs shadow-md">
+                                                Simulasi Biometrik Sukses
+                                            </button>
+                                        </div>
+                                    </template>
+
+                                    <!-- Step 2: AI Risk Analysis -->
+                                    <template x-if="secStep === 2">
+                                        <div class="space-y-3 animate-fade-in w-full">
+                                            <div class="flex items-center justify-center space-x-2 text-neon-cyan">
+                                                <i data-lucide="cpu" class="w-6 h-6 animate-spin"></i>
+                                                <span class="text-xs font-mono font-bold">Menganalisis Perilaku & Lokasi...</span>
+                                            </div>
+                                            <div class="w-full bg-slate-900 h-2 rounded-full overflow-hidden">
+                                                <div class="bg-gradient-to-r from-dana-500 to-neon-cyan h-full w-3/4 animate-pulse"></div>
+                                            </div>
+                                            <p class="text-[11px] text-slate-400">AI Risk Score: <span class="text-emerald-400 font-bold">0.02 (Aman / Low Risk)</span></p>
+                                        </div>
+                                    </template>
+
+                                    <!-- Step 3: PIN Authorized -->
+                                    <template x-if="secStep === 3">
+                                        <div class="space-y-3 animate-fade-in">
+                                            <div class="w-12 h-12 mx-auto rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center border border-emerald-500/40">
+                                                <i data-lucide="check" class="w-6 h-6"></i>
+                                            </div>
+                                            <p class="text-xs text-emerald-300 font-bold">Transaksi Disetujui & Terenkripsi Aman!</p>
+                                            <button @click="resetSecurity()" class="px-3 py-1.5 rounded-lg bg-slate-800 text-xs text-slate-300 hover:text-white">
+                                                Ulangi Simulasi
+                                            </button>
+                                        </div>
+                                    </template>
+
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+
+                    <!-- 6. INFRASTRUKTUR TEKNOLOGI (Feature: Live Latency & TPS Monitor) -->
+                    <template x-if="activeTopicIndex === 5">
+                        <div class="space-y-6">
+                            <div class="space-y-2">
+                                <p class="font-medium text-neon-cyan">Cloud-Native Architecture & Live Latency Monitor</p>
+                                <p class="text-sm text-slate-300">DANA menggunakan infrastruktur cloud-native berstandar tinggi dengan ketersediaan sistem 99.99% untuk menopang jutaan transaksi per detik.</p>
+                            </div>
+
+                            <!-- Interactive Live TPS & Server Monitor Widget -->
+                            <div class="glass-card p-6 rounded-2xl border border-dana-500/30 space-y-4 max-w-xl mx-auto shadow-xl">
+                                <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+                                    <div class="flex items-center space-x-2">
+                                        <div class="w-8 h-8 rounded-lg bg-dana-500/20 text-neon-cyan flex items-center justify-center">
+                                            <i data-lucide="cpu" class="w-4 h-4"></i>
+                                        </div>
+                                        <div>
+                                            <h4 class="font-bold text-sm text-white">Cloud Server Cluster Monitor</h4>
+                                            <p class="text-[10px] text-slate-400">Region: <span class="text-neon-cyan font-mono">Jakarta-ID (AZ-1)</span></p>
+                                        </div>
+                                    </div>
+                                    <span class="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-500/30 font-mono">99.99% Uptime</span>
+                                </div>
+
+                                <div class="grid grid-cols-2 gap-3 text-center">
+                                    <div class="p-3 rounded-xl bg-slate-950 border border-slate-800">
+                                        <span class="text-[10px] text-slate-400 block mb-1">Transaksi / Detik (TPS)</span>
+                                        <span class="text-xl font-extrabold text-neon-cyan font-mono" x-text="liveTps"></span>
+                                    </div>
+                                    <div class="p-3 rounded-xl bg-slate-950 border border-slate-800">
+                                        <span class="text-[10px] text-slate-400 block mb-1">Latensi Jaringan</span>
+                                        <span class="text-xl font-extrabold text-emerald-400 font-mono">12 ms</span>
+                                    </div>
+                                </div>
+
+                                <button @click="boostTps()" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-dana-500 to-blue-600 text-white font-bold text-xs shadow-md">
+                                    Simulasi Lonjakan Traffic (Flash Sale)
+                                </button>
+                            </div>
+                        </div>
+                    </template>
+
+                    <!-- 7. ANALISA SWOT DANA (Feature: SWOT Matrix Selector & Chart) -->
+                    <template x-if="activeTopicIndex === 6">
+                        <div class="space-y-6">
+                            <div class="space-y-3">
+                                <p class="font-medium text-neon-cyan text-base">Evaluasi SWOT & Interactive Chart Visualization</p>
+                                <p class="text-sm md:text-base leading-relaxed">Analisis SWOT memberikan gambaran komprehensif mengenai posisi strategis DANA di tengah ketatnya persaingan industri fintech tanah air. Kekuatan utamanya terletak pada integrasi mendalam dengan standar QRIS nasional, adopsi teknologi keamanan biometrik, serta basis pengguna aktif yang masif.</p>
+                                <p class="text-sm md:text-base leading-relaxed">Di sisi lain, tantangan seperti ketergantungan pada koneksi internet seluler dan kompetisi ketat dengan super-app perbankan digital menjadi catatan penting. Namun, peluang ekspansi digitalisasi UMKM daerah serta kolaborasi open banking menawarkan ruang pertumbuhan yang sangat luas.</p>
+                            </div>
+
+                            <!-- Interactive SWOT Matrix & Live Scoring Chart -->
+                            <div class="glass-card p-6 rounded-2xl border border-dana-500/30 space-y-5 max-w-xl mx-auto shadow-xl">
+                                <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+                                    <h4 class="font-bold text-sm text-white flex items-center space-x-2">
+                                        <i data-lucide="bar-chart-2" class="w-4 h-4 text-neon-cyan"></i>
+                                        <span>Grafik Bobot Dampak Strategis SWOT</span>
+                                    </h4>
+                                    <span class="text-[10px] bg-dana-500/20 text-neon-cyan px-2 py-0.5 rounded font-mono">Real-time Score</span>
+                                </div>
+
+                                <!-- SWOT Selector Grid -->
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div @click="activeSwot = 'Strengths'" class="p-3 rounded-xl border cursor-pointer transition" :class="activeSwot === 'Strengths' ? 'border-neon-cyan bg-dana-900/40 shadow-md' : 'border-slate-800 bg-slate-950'">
+                                        <span class="text-xs font-bold text-neon-cyan block mb-1">Strengths (92%)</span>
+                                        <p class="text-[10px] text-slate-300">Ekosistem luas & lisensi BI.</p>
+                                    </div>
+                                    <div @click="activeSwot = 'Weaknesses'" class="p-3 rounded-xl border cursor-pointer transition" :class="activeSwot === 'Weaknesses' ? 'border-amber-400 bg-dana-900/40 shadow-md' : 'border-slate-800 bg-slate-950'">
+                                        <span class="text-xs font-bold text-amber-400 block mb-1">Weaknesses (45%)</span>
+                                        <p class="text-[10px] text-slate-300">Bergantung koneksi internet.</p>
+                                    </div>
+                                    <div @click="activeSwot = 'Opportunities'" class="p-3 rounded-xl border cursor-pointer transition" :class="activeSwot === 'Opportunities' ? 'border-emerald-400 bg-dana-900/40 shadow-md' : 'border-slate-800 bg-slate-950'">
+                                        <span class="text-xs font-bold text-emerald-400 block mb-1">Opportunities (88%)</span>
+                                        <p class="text-[10px] text-slate-300">Digitalisasi UMKM daerah.</p>
+                                    </div>
+                                    <div @click="activeSwot = 'Threats'" class="p-3 rounded-xl border cursor-pointer transition" :class="activeSwot === 'Threats' ? 'border-rose-400 bg-dana-900/40 shadow-md' : 'border-slate-800 bg-slate-950'">
+                                        <span class="text-xs font-bold text-rose-400 block mb-1">Threats (60%)</span>
+                                        <p class="text-[10px] text-slate-300">Kompetisi super-app ketat.</p>
+                                    </div>
+                                </div>
+
+                                <!-- Dynamic Bar Chart Visualizer -->
+                                <div class="space-y-3 pt-2">
+                                    <div class="space-y-1">
+                                        <div class="flex justify-between text-xs font-mono text-slate-300">
+                                            <span>Strengths (Kekuatan)</span>
+                                            <span class="text-neon-cyan font-bold">92%</span>
+                                        </div>
+                                        <div class="w-full bg-slate-950 h-2.5 rounded-full overflow-hidden border border-slate-800">
+                                            <div class="bg-gradient-to-r from-dana-500 to-neon-cyan h-full w-[92%] transition-all duration-500"></div>
+                                        </div>
+                                    </div>
+                                    <div class="space-y-1">
+                                        <div class="flex justify-between text-xs font-mono text-slate-300">
+                                            <span>Weaknesses (Kelemahan)</span>
+                                            <span class="text-amber-400 font-bold">45%</span>
+                                        </div>
+                                        <div class="w-full bg-slate-950 h-2.5 rounded-full overflow-hidden border border-slate-800">
+                                            <div class="bg-gradient-to-r from-amber-600 to-amber-400 h-full w-[45%] transition-all duration-500"></div>
+                                        </div>
+                                    </div>
+                                    <div class="space-y-1">
+                                        <div class="flex justify-between text-xs font-mono text-slate-300">
+                                            <span>Opportunities (Peluang)</span>
+                                            <span class="text-emerald-400 font-bold">88%</span>
+                                        </div>
+                                        <div class="w-full bg-slate-950 h-2.5 rounded-full overflow-hidden border border-slate-800">
+                                            <div class="bg-gradient-to-r from-emerald-600 to-emerald-400 h-full w-[88%] transition-all duration-500"></div>
+                                        </div>
+                                    </div>
+                                    <div class="space-y-1">
+                                        <div class="flex justify-between text-xs font-mono text-slate-300">
+                                            <span>Threats (Ancaman)</span>
+                                            <span class="text-rose-400 font-bold">60%</span>
+                                        </div>
+                                        <div class="w-full bg-slate-950 h-2.5 rounded-full overflow-hidden border border-slate-800">
+                                            <div class="bg-gradient-to-r from-rose-600 to-rose-400 h-full w-[60%] transition-all duration-500"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+
+                    <!-- 8. RISIKO DAN MITIGASI (Feature: Risk Mitigation Matrix) -->
+                    <template x-if="activeTopicIndex === 7">
+                        <div class="space-y-6">
+                            <div class="space-y-3">
+                                <p class="font-medium text-neon-cyan text-base">Mitigasi Risiko & Interactive Shield Simulator</p>
+                                <p class="text-sm md:text-base leading-relaxed">Dalam lanskap keuangan digital yang dinamis, ancaman siber seperti social engineering (phishing), rekayasa sosial, dan pencurian akun merupakan risiko esensial yang harus ditangani secara proaktif. DANA menerapkan protokol mitigasi risiko berlapis berbasis kecerdasan buatan.</p>
+                                <p class="text-sm md:text-base leading-relaxed">Sistem mitigasi mencakup pemblokiran otomatis domain penipuan, pembatasan perangkat login yang tidak dikenali, verifikasi OTP instan, serta edukasi keamanan siber berkelanjutan kepada pengguna untuk memastikan integritas dan keamanan setiap transaksi 24/7.</p>
+                            </div>
+
+                            <!-- Interactive Risk & Mitigation Shield Simulator Feature -->
+                            <div class="glass-card p-6 rounded-2xl border border-dana-500/30 space-y-4 max-w-xl mx-auto shadow-xl">
+                                <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+                                    <h4 class="font-bold text-sm text-white flex items-center space-x-2">
+                                        <i data-lucide="shield-alert" class="w-4 h-4 text-amber-400"></i>
+                                        <span>Simulasi Deteksi Ancaman & Mitigasi</span>
+                                    </h4>
+                                    <span class="text-[10px] bg-dana-500/20 text-neon-cyan px-2 py-0.5 rounded font-mono" x-text="riskStatus"></span>
+                                </div>
+
+                                <div class="space-y-3">
+                                    <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                                        <div>
+                                            <p class="text-xs font-semibold text-white">Ancaman 1: Social Engineering (Phishing Link)</p>
+                                            <p class="text-[10px] text-slate-400">Status: <span class="text-emerald-400">Terdeteksi & Diblokir Otomatis</span></p>
+                                        </div>
+                                        <button @click="mitigateRisk('Social Engineering')" class="px-3 py-1.5 rounded-lg bg-dana-500 hover:bg-dana-600 text-white font-bold text-[10px]">
+                                            Test Mitigasi
+                                        </button>
+                                    </div>
+                                    <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                                        <div>
+                                            <p class="text-xs font-semibold text-white">Ancaman 2: Unauthorized Login (Brute Force)</p>
+                                            <p class="text-[10px] text-slate-400">Status: <span class="text-emerald-400">Dihentikan oleh AI Risk Engine</span></p>
+                                        </div>
+                                        <button @click="mitigateRisk('Brute Force')" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px]">
+                                            Test Mitigasi
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="p-3 rounded-xl bg-dana-950 border border-dana-500/20 text-xs text-slate-300">
+                                    <p class="font-semibold text-neon-cyan mb-1">Log Sistem Mitigasi:</p>
+                                    <p class="font-mono text-[11px] text-slate-400" x-text="riskLog"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+
+                    <!-- 9. KESIMPULAN (Feature: Presentation Summary Generator) -->
+                    <template x-if="activeTopicIndex === 8">
+                        <div class="space-y-6">
+                            <div class="space-y-2">
+                                <p class="font-medium text-neon-cyan">Katalisator Inklusi Keuangan Nasional</p>
+                                <p>DANA berhasil menjadi katalisator utama inklusi keuangan digital di Indonesia melalui inovasi teknologi yang aman, mudah, dan terpercaya bagi seluruh masyarakat.</p>
+                            </div>
+
+                            <!-- Interactive Summary Checklist Feature -->
+                            <div class="glass-card p-5 rounded-2xl border border-dana-500/30 space-y-3 max-w-xl mx-auto">
+                                <h4 class="font-bold text-sm text-white">Poin Utama Presentasi Kelompok B</h4>
+                                <ul class="space-y-2 text-xs text-slate-300">
+                                    <li class="flex items-center space-x-2">
+                                        <i data-lucide="check-circle" class="w-4 h-4 text-neon-cyan"></i>
+                                        <span>Adopsi QRIS nasional mendominasi transaksi harian.</span>
+                                    </li>
+                                    <li class="flex items-center space-x-2">
+                                        <i data-lucide="check-circle" class="w-4 h-4 text-neon-cyan"></i>
+                                        <span>Keamanan berlapis AI Risk Engine menjaga kepercayaan 170+ juta pengguna.</span>
+                                    </li>
+                                    <li class="flex items-center space-x-2">
+                                        <i data-lucide="check-circle" class="w-4 h-4 text-neon-cyan"></i>
+                                        <span>Infrastruktur cloud-native menjamin performa tanpa henti.</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </template>
+
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="relative z-10 w-full py-6 text-center text-xs text-slate-500 border-t border-slate-800/60 mt-12">
+        <p>Analisis Produk Fintech DANA — Kelompok B &bull; 2026</p>
+    </footer>
+
+    <!-- Alpine.js State Script -->
+    <script>
+        function danaApp() {
+            return {
+                currentScreen: 'lobby',
+                isLoading: false,
+                loadingText: 'Memproses Sistem...',
+                activeTopicIndex: 0,
+                simTab: 'home',
+                simBalance: 'Rp 12.450.800',
+                qrisStatus: 'Arahkan kamera ke QR Code Merchant...',
+                // Feature States
+                growthYear: 2026,
+                growthPercent: 88,
+                growthVolume: 'Rp 450 Triliun',
+                updateGrowth() {
+                    this.growthPercent = Math.min(99, 60 + (this.growthYear - 2020) * 5);
+                    this.growthVolume = 'Rp ' + (200 + (this.growthYear - 2020) * 45) + ' Triliun';
+                },
+                selectedMilestone: { year: 2018, title: 'Peluncuran Resmi DANA', desc: 'PT Espay Debit Indonesia Koe resmi beroperasi di Indonesia.' },
+                milestones: [
+                    { year: 2018, title: 'Peluncuran Resmi DANA', desc: 'PT Espay Debit Indonesia Koe resmi beroperasi di Indonesia.' },
+                    { year: 2020, title: 'Adopsi QRIS Nasional', desc: 'Integrasi penuh dengan standar QRIS Bank Indonesia.' },
+                    { year: 2023, title: 'Pencapaian 150 Juta Pengguna', desc: 'Menjadi salah satu dompet digital dengan pertumbuhan tercepat.' },
+                    { year: 2026, title: 'Ekosistem Finansial Komprehensif', desc: 'Ekspansi layanan investasi, asuransi, dan open banking.' }
+                ],
+                liveTps: 14500,
+                boostTps() {
+                    this.liveTps = 48200;
+                    setTimeout(() => { this.liveTps = 14500; }, 2000);
+                },
+                activeSwot: 'Strengths',
+                // Risk Mitigation Simulator State
+                riskStatus: 'System Shield: Optimal',
+                riskLog: 'Menunggu simulasi ancaman...',
+                mitigateRisk(type) {
+                    this.riskStatus = 'Mitigasi Aktif!';
+                    if (type === 'Social Engineering') {
+                        this.riskLog = '[MITIGASI] Domain phishing diblokir, akun pengguna dikunci otomatis & notifikasi darurat dikirim.';
+                    } else {
+                        this.riskLog = '[MITIGASI] IP mencurigakan di-blacklist, verifikasi OTP sekunder diaktifkan instan.';
+                    }
+                    setTimeout(() => {
+                        this.riskStatus = 'System Shield: Optimal';
+                    }, 3000);
+                },
+                // Security Simulator State
+                secStep: 1,
+                secStepText: 'Langkah 1: Biometrik',
+                runSecurityStep(step) {
+                    this.secStep = step;
+                    this.secStepText = 'Langkah 2: AI Risk Check';
+                    setTimeout(() => {
+                        this.secStep = 3;
+                        this.secStepText = 'Langkah 3: Verified';
+                    }, 1200);
+                },
+                resetSecurity() {
+                    this.secStep = 1;
+                    this.secStepText = 'Langkah 1: Biometrik';
+                },
+                simulateQrisPayment() {
+                    this.qrisStatus = 'Memproses pembayaran ke Merchant...';
+                    setTimeout(() => {
+                        this.simBalance = 'Rp 12.425.800';
+                        this.qrisStatus = 'Pembayaran Berhasil! Terima Kasih.';
+                        setTimeout(() => {
+                            this.simTab = 'home';
+                            this.qrisStatus = 'Arahkan kamera ke QR Code Merchant...';
+                        }, 1500);
+                    }, 1000);
+                },
+                simulateTransfer() {
+                    this.simBalance = 'Rp 12.350.800';
+                    this.simTab = 'home';
+                },
+                members: [
+                    { name: 'Julianty Indah Putri', npm: '26316241006', unlocked: false },
+                    { name: 'Muhammad Farhan Aunurrofiq', npm: '26316241007', unlocked: false },
+                    { name: 'Farrel Tito Ramadhan', npm: '26316241008', unlocked: false },
+                    { name: 'Ulfiana Rokhma', npm: '26316241010', unlocked: false },
+                    { name: 'Julie Haniya Firly', npm: '26316241011', unlocked: false }
+                ],
+                topics: [
+                    { title: 'Pendahuluan', icon: 'compass', preview: 'Menjelaskan era transformasi finansial digital di Indonesia serta lonjakan eksponensial penetrasi dompet digital dalam kehidupan sehari-hari.' },
+                    { title: 'Profil Perusahaan', icon: 'building', preview: 'Membahas sejarah PT Espay Debit Indonesia Koe (DANA) sebagai platform pembayaran terbuka yang dipimpin oleh CEO Vince Iswara.' },
+                    { title: 'Produk dan Layanan Utama', icon: 'layers', preview: 'Mengulas ekosistem layanan lengkap seperti QRIS, kirim uang, pembayaran tagihan, dengan live interactive simulator.' },
+                    { title: 'Model Bisnis', icon: 'trending-up', preview: 'Menganalisis strategi monetisasi B2B2C melalui Merchant Discount Rate (MDR) serta kolaborasi perbankan terbuka.' },
+                    { title: 'Alur Penggunaan dan Keamanan', icon: 'shield-check', preview: 'Menyoroti sistem keamanan berlapis, verifikasi biometrik, PIN, dan AI Risk Engine anti-fraud.' },
+                    { title: 'Infrastruktur Teknologi', icon: 'cpu', preview: 'Meninjau arsitektur cloud-native berkapasitas tinggi dengan ketersediaan 99.99% dan latensi rendah.' },
+                    { title: 'Analisa SWOT DANA', icon: 'bar-chart-2', preview: 'Evaluasi matriks Kekuatan, Kelemahan, Peluang, dan Ancaman strategis terhadap kompetitor industri fintech.' },
+                    { title: 'Risiko dan Mitigasi', icon: 'alert-triangle', preview: 'Strategi pencegahan social engineering, penipuan online, serta proteksi data pengguna berstandar internasional.' },
+                    { title: 'Kesimpulan', icon: 'award', preview: 'Rangkuman peran DANA sebagai katalisator utama inklusi keuangan digital dan ekonomi cashless di Indonesia.' }
+                ],
+                triggerLoading(targetScreen, text) {
+                    this.isLoading = true;
+                    this.loadingText = text || 'Memproses Sistem...';
+                    setTimeout(() => {
+                        this.currentScreen = targetScreen;
+                        this.isLoading = false;
+                        setTimeout(() => {
+                            lucide.createIcons();
+                        }, 50);
+                    }, 2000);
+                },
+                openTopicDetail(idx) {
+                    this.activeTopicIndex = idx;
+                    this.triggerLoading('topic-detail', `Membuka Materi: ${this.topics[idx].title}...`);
+                },
+                toggleMember(index) {
+                    this.members[index].unlocked = !this.members[index].unlocked;
+                },
+                // Ultra-smooth 60fps Lerp Tilt Physics for 3D Phone Mockup
+                currentX: 0,
+                currentY: 0,
+                targetX: 0,
+                targetY: 0,
+                lerpAnimationId: null,
+                
+                initLerpLoop() {
+                    const updateTilt = () => {
+                        this.currentX += (this.targetX - this.currentX) * 0.1;
+                        this.currentY += (this.targetY - this.currentY) * 0.1;
+
+                        const phone = document.getElementById('phone-container');
+                        if (phone && this.currentScreen === 'lobby') {
+                            phone.style.transform = `perspective(1000px) rotateX(${this.currentX}deg) rotateY(${this.currentY}deg) scale3d(1.03, 1.03, 1.03)`;
+                        }
+                        this.lerpAnimationId = requestAnimationFrame(updateTilt);
+                    };
+                    if (!this.lerpAnimationId) {
+                        updateTilt();
+                    }
+                },
+                handlePhoneMove(e) {
+                    const phone = document.getElementById('phone-container');
+                    if (!phone) return;
+                    const rect = phone.getBoundingClientRect();
+                    const x = e.clientX - rect.left - rect.width / 2;
+                    const y = e.clientY - rect.top - rect.height / 2;
+                    this.targetX = (-y / (rect.height / 2)) * 18;
+                    this.targetY = (x / (rect.width / 2)) * 18;
+                },
+                resetPhoneTilt() {
+                    this.targetX = 0;
+                    this.targetY = 0;
+                }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            const appInstance = Alpine.$data(document.querySelector('[x-data]'));
+            if (appInstance && appInstance.initLerpLoop) {
+                appInstance.initLerpLoop();
+            }
+        });
+    </script>
+</body>
+</html>
